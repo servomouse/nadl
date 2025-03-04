@@ -1,0 +1,44 @@
+{
+    "scopeName": "source.nad",
+    "patterns": [
+        {
+          "include": "#keyword"
+        },
+        {
+          "include": "#enum"
+        },
+        {
+            "match": "#.*$",
+            "name": "comment.line.nadl"
+        },
+        {
+            "match": ":",
+            "name": "punctuation.separator"
+        },
+        {
+            "match": ",",
+            "name": "punctuation.separator"
+        }
+    ],
+    "fileTypes": [
+        ".nad"
+    ],
+    "repository": {
+      "keyword": {
+        "patterns": [
+          {
+            "match": "\\b(inputs|groups|outputs|type|exclude)\\b",
+            "name": "keyword.control.nadl"
+          }
+        ]
+      },
+      "enum": {
+        "patterns": [
+          {
+            "match": "\\b(linear|poly)\\b",
+            "name": "constant.numeric.nadl"
+          }
+        ]
+      }
+    }
+  }
