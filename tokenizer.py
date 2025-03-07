@@ -47,7 +47,7 @@ def parse_range(string, line):
 
 
 def get_label_type(token):
-    keywords = ['module', 'inputs', 'groups', 'outputs', 'except', 'exclude', 'type', 'linear', 'poly']
+    keywords = ['module', 'inputs', 'groups', 'outputs', 'except', 'exclude', 'type']
     if token in keywords:
         return 'keyword'
     if token == 'idx':
@@ -78,6 +78,7 @@ def tokenize(data):
     }
     for line in data:
         string = line['data']
+        # print(f"Parsing string {line['line_number']}: {string}")
         while len(string) > 0:
             if string[0] in tokens_dict:
                 tokens.append({
