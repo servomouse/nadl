@@ -29,7 +29,7 @@ The division into groups is optional.
     ]
 
 In this example, the network has three input groups:   
-- main_input containing a single neuron with an index 0  
+- main_input containing a single input with an index 0  
 - secondary_input containing inputs 1, 2, 3, 4, 5, 6 and 7 
 - unnamed group with a range of indices from 8 to 31.
 
