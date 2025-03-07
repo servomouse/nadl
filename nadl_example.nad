@@ -13,12 +13,12 @@
 module: micronet
 
     inputs: [
-        0,      # single index
+        main_input 0,      # single index
         1:32    # range
     ]
 
     groups: [
-        8 x [inputs[0:16] except[idx]] type linear,
+        8 x [inputs[0:16] except[idx] exclude[4], inputs[25:32] exclude[26]] type linear,
         groupname 8 x [inputs[16:31]] type linear,
         4 x [group[0], group[1]] type linear
     ]
