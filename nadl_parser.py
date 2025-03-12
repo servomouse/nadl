@@ -65,35 +65,6 @@ def get_layers(tokens):
     return layers, tokens
 
 
-# def get_irange(tokens):
-#     s_range = ['']
-#     tok_idx = 0
-#     if tokens[0]['token_type'] == 'range':
-#         s_range[0] += tokens[0]['token']
-#     if tokens[1]['token_type'] == 'colon':
-#         if tokens[2]['token_type'] == 'range':
-#             s_range.append(tokens[2]['token'])
-#             tok_idx = 3
-#         else:
-#             raise Exception(f"Error at line {tokens[2]['line_number']}: expected: range, got: {tokens[2]['token']}")
-#     elif (tokens[1]['token_type'] == 'comma') or (tokens[1]['token_type'] == 'close_bracket'):
-#         tok_idx = 2
-#     else:
-#         raise Exception(f"Error at line {tokens[1]['line_number']}: expected: "
-#                         f"\",\", \':\' or \"]\", got: {tokens[1]['token']}")
-#     i_range = []
-#     r_size = 1
-#     for i in range(len(s_range)):
-#         i_range.append(int(s_range[i]))
-#     if len(i_range) == 2:
-#         if i_range[0] >= i_range[1]:
-#             raise Exception(f"Error: invalid range at line {tokens[0]['line_number']}: "
-#                             f"{tokens[0]['token']}{tokens[1]['token']} {tokens[2]['token']}")
-#         r_size = i_range[1] - i_range[0] + 1
-#     tokens = tokens[tok_idx:]
-#     return r_size, i_range, tokens
-
-
 def get_input_range_size(token):
     r_size = 1
     r_range = [int(token['token'][0])]
@@ -268,10 +239,26 @@ def get_group(tokens):
     return group
 
 
+def clear_inputs(mod_inputs):
+    num_inputs = 0
+    groups = []
+    for group in mod_inputs:
+        num_inputs += group['size']
+        groups.append({
+            'label': group['label'],
+            'first_idx': group['range'][0],
+            'last_idx': group['range'][1] if len(group['range']) == 2 else group['range'][0]
+        })
+    return {
+        "num_items": num_inputs,
+        "groups": groups
+    }
+
+
 def get_module(tokens):
     mod_name, tokens = get_module_name(tokens)
     mod_layers, tokens = get_layers(tokens)
-    mod_inputs = get_inputs(mod_layers['inputs'])
+    mod_inputs = clear_inputs(get_inputs(mod_layers['inputs']))
     mod_groups = get_group(mod_layers['groups'])
     mod_outputs = get_group(mod_layers['outputs'])
     print(f"Module name: {mod_name}")
@@ -282,9 +269,6 @@ def get_module(tokens):
     print("Module outputs:")
     for i in range(len(mod_outputs)):
         print(f"\t{mod_outputs[i]}")
-    # for layer in mod_layers:
-    #     print(f"\tModule layer: {layer}")
-    #     print(f"\tModule layer: {mod_layers[layer]}")
     print(f"Remaining tokens: {tokens}")
     return mod_name, None, None
 
@@ -300,17 +284,6 @@ def process_modules(tokens):
         else:
             raise Exception(f"Error: two modules with the same name ({module_name})!")
     return modules
-
-
-# def group_tokens(tokens):
-#     groups = {}
-#     while len(tokens) > 0:
-#         if token[0]['token'] == 'module' and \
-#            token[1]['token_type'] == 'colon' and \
-#            token[2]['token_type'] == 'label':
-#             if token[2]['token'] in groups:
-#                 raise Exception(f"Error: two modules with the same name ({module_name})!")
-#             groups[token[2]['token']] = {}
 
 
 def parse(filename):

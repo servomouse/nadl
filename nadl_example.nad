@@ -14,7 +14,7 @@ module: micronet
 
     inputs: [
         main_input 0,      # single index
-        1:32    # range
+        0:32    # range
     ]
 
     groups: [
@@ -26,6 +26,23 @@ module: micronet
     outputs: [
         4 x [group[2]] type poly
     ]
+
+# module: micronet1
+
+#     inputs: [
+#         main_input 0,      # single index
+#         0:32    # range
+#     ]
+
+#     groups: [
+#         8 x [inputs[0:16] except[idx] exclude[4], inputs[25:32] exclude[26]] type linear,
+#         groupname 8 x [inputs[16:31]] type linear,
+#         4 x [group[0], group[1]] type linear
+#     ]
+
+#     outputs: [
+#         4 x [group[2]] type poly
+#     ]
 
 # {
 #     "inputs": [
