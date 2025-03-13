@@ -48,6 +48,11 @@ def replace_substring(original_string, s0, s1):
 # c = r_outputs
 # r_module = f"{r_module}?(?=[{a}{c}{b}]*{a})(?=[{a}{c}{b}]*{c})[{a}{c}{b}]+"
 
+# Throws exception if expression is False
+def nadl_assert(expression, error_str, line):
+    if not expression:
+        raise Exception(f"Error at line {line}: {error_str}")
+
 def prepare_data(data):
     lines = []
     counter = 0
@@ -134,19 +139,61 @@ def parse_inputs(tokens):
         else:
             raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: \"{tokens[0]['val']}\"")
         tokens = tokens[1:]
-    print(inputs)
+    # print(inputs)
     return inputs, 'inputs', tokens
 
 
+def parse_subgroup(tokens):
+    sg_name = None
+    sg_size = 0
+    if tokens[0]['type'] == 'label':
+        nadl_assert(tokens[0]['val'] in ['inputs', 'outputs'],
+                    f"invalid group name: {tokens[0]['val']}", tokens[0]['l_number'])
+        sg_name = tokens[0]['val']
+        tokens = tokens[1:]
+    if tokens[0]['type'] == 'int':
+        sg_size = tokens[0]['val']
+        tokens = tokens[1:]
+    else:
+        nadl_assert(False, f"invalid group definition: {tokens[0]['val']}\n\tCorrect definition looks like this: "
+                            "\"<groupname> size x [...\", groupname is an optional label", tokens[0]['l_number'])
+    tokens = tokens[1:]
+    nadl_assert(tokens[0]['type'] == 'by', f"invalid group definition: {tokens[0]['val']}\n\tCorrect definition looks like this: "
+                                            "\"<groupname> size x [...\", groupname is an optional label", tokens[0]['l_number'])
+    tokens = tokens[2:]
+    depth = 1
+    inputs = []
+    while depth > 0:
+        if tokens[0]['type'] == 'label':
+            i_name = tokens[0]['val']
+
+
+
 def parse_group(tokens):
-    raise Exception("Not implemented!")
+    g_name = tokens[0]['val']
+    tokens = tokens[1:]
+    g_items = []
+    if (tokens[0]['type'] != 'colon') or (tokens[1]['type'] != 'open_bracket'):
+        raise Exception(f"Syntax error at line {tokens[0]['l_number']}: Correct syntax is as following: \"groups: [...\" or \"outputs: [...\"")
+    tokens = tokens[2:]
+    while len(tokens) > 0:
+        if tokens[0]['type'] == 'comma':
+            tokens = tokens[1:]
+        elif tokens[0]['type'] == 'close_bracket':
+            break
+        elif tokens[0]['type'] in ['int', 'label']:
+            group, tokens = parse_subgroup(tokens)
+            g_items.append(group)
+    return g_items, g_name, tokens
 
 
 def parse_cluster(tokens):
     if tokens[0]['val']  == 'inputs':
         return parse_inputs(tokens[1:])
     elif tokens[0]['val'] in ['outputs', 'groups']:
-        return parse_group(tokens[1:])
+        return parse_group(tokens)
+    elif tokens[0]['val']  == 'module':
+        return None, None, tokens
     else:
         raise Exception(f"Syntax error at line {tokens[0]['l_number']}: Invalid group name: \"{tokens[0]['val']}\"")
 
