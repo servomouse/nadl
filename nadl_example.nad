@@ -14,13 +14,14 @@ module: micronet
 
     inputs: [
         main_input 0,      # single index
-        0:32    # range
+        1:32    # range
     ]
 
     groups: [
-        8 x [inputs[0:16] except[idx] exclude[4], inputs[25:32] exclude[26]] type linear,
-        groupname 8 x [inputs[16:31]] type linear,
-        4 x [group[0], group[1]] type linear
+        groupname1 8 x [inputs[16:31]] type poly,
+        groupname2 8 x [inputs[16:31] except[2] except[3:81] exclude[6] exclude[9:25]] type poly,
+        12 x [inputs[16:31] except[2] except[3:81] exclude[6] exclude[9:25]] type linear,
+        256 x [inputs[16:31] except[2] except[3:81] exclude[6] exclude[9:25]] type lalala
     ]
 
     outputs: [

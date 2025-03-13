@@ -9,14 +9,16 @@ symbols = [
 digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 tokens = {
-    ',': {'type': 'comma', 'len': 1, 'text': ',', 'l_number': 0},
-    ':': {'type': 'colon', 'len': 1, 'text': ':', 'l_number': 0},
-    '[': {'type': 'open_bracket', 'len': 1, 'text': '[', 'l_number': 0},
-    ']': {'type': 'close_bracket', 'len': 1, 'text': ']', 'l_number': 0},
-    'except': {'type': 'keyword', 'len': 6, 'text': 'except', 'l_number': 0},
-    'exclude': {'type': 'keyword', 'len': 7, 'text': 'exclude', 'l_number': 0},
-    'type': {'type': 'keyword', 'len': 4, 'text': 'type', 'l_number': 0},
-    'idx': {'type': 'keyword', 'len': 3, 'text': 'idx', 'l_number': 0},
+    ',': {'type': 'comma', 'len': 1, 'val': ',', 'l_number': 0},
+    'x': {'type': 'by', 'len': 1, 'val': 'x', 'l_number': 0},
+    ':': {'type': 'colon', 'len': 1, 'val': ':', 'l_number': 0},
+    '[': {'type': 'open_bracket', 'len': 1, 'val': '[', 'l_number': 0},
+    ']': {'type': 'close_bracket', 'len': 1, 'val': ']', 'l_number': 0},
+    'module': {'type': 'keyword', 'len': 6, 'val': 'module', 'l_number': 0},
+    'except': {'type': 'keyword', 'len': 6, 'val': 'except', 'l_number': 0},
+    'exclude': {'type': 'keyword', 'len': 7, 'val': 'exclude', 'l_number': 0},
+    'type': {'type': 'keyword', 'len': 4, 'val': 'type', 'l_number': 0},
+    'idx': {'type': 'keyword', 'len': 3, 'val': 'idx', 'l_number': 0},
 }
 
 
@@ -41,7 +43,7 @@ def parse_token(lines):
             return {
                 'type': tokens[t]['type'],
                 'len': tokens[t]['len'],
-                'text': tokens[t]['text'],
+                'val': tokens[t]['val'],
                 'l_number': lines[0]['l_number']
             }, lines if len(line) > 0 else lines[1:]
         elif line[0] == ' ':
@@ -56,7 +58,7 @@ def parse_token(lines):
                     else:
                         break
                 lines[0]['text'] = line
-                return {'type': 'label', 'len': len(tok), 'text': tok, 'l_number': lines[0]['l_number']}, lines if len(line) > 0 else lines[1:]
+                return {'type': 'label', 'len': len(tok), 'val': tok, 'l_number': lines[0]['l_number']}, lines if len(line) > 0 else lines[1:]
             elif line[0] in digits:
                 while len(line) > 0:
                     if line[0] in digits:
@@ -65,7 +67,7 @@ def parse_token(lines):
                     else:
                         break
                 lines[0]['text'] = line
-                return {'type': 'int', 'len': len(tok), 'text': int(tok), 'l_number': lines[0]['l_number']}, lines if len(line) > 0 else lines[1:]
+                return {'type': 'int', 'len': len(tok), 'val': int(tok), 'l_number': lines[0]['l_number']}, lines if len(line) > 0 else lines[1:]
     return None, lines[1:]
 
 
@@ -75,7 +77,7 @@ def tokenize(lines):
     while True:
         counter += 1
         token, lines = parse_token(lines)
-        if ((token is None) and (len(lines) == 0)) or (counter == 100):
+        if ((token is None) and (len(lines) == 0)) or (counter == 1000):
             break
         if token is not None:
             tokens.append(token)
