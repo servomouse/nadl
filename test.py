@@ -1,4 +1,4 @@
-from new_tokenizer import tokenize
+from new_tokenizer import tokenize, update_ranges
 import re
 
 
@@ -66,33 +66,6 @@ def prepare_data(data):
                 'l_number': counter,
             })
     return lines
-
-
-def update_ranges(tokens):
-    new_tokens = []
-    i = 0
-    while i < len(tokens):
-        tok = tokens[i]
-        if tokens[i]['type'] == 'int':
-            if (tokens[i+1]['type'] == 'colon') and (tokens[i+2]['type'] == 'int'):
-                val = f"{tokens[i]['val']}{tokens[i+1]['val']}{tokens[i+2]['val']}"
-                t_len = tokens[i]['len'] + tokens[i+1]['len'] + tokens[i+2]['len']
-                new_tokens.append({'type': 'range', 'len': t_len, 'val': [tokens[i]['val'], tokens[i+2]['val']], 'l_number': tokens[i]['l_number']})
-                # print(f"{tok['l_number']}: range {val} [{t_len}]")
-                i += 2
-            elif (tokens[i+1]['type'] == 'comma') or (tokens[i+1]['type'] == 'close_bracket'):
-                new_tokens.append({'type': 'range', 'len': tokens[i]['len'], 'val': [tokens[i]['val'], tokens[i]['val']], 'l_number': tokens[i]['l_number']})
-                # print(f"{tok['l_number']}: range {tok['val']} [{tok['len']}]")
-            elif tokens[i+1]['type'] == 'by':
-                new_tokens.append({'type': tok['type'], 'len': tok['len'], 'val': tok['val'], 'l_number': tok['l_number']})
-                # print(f"{tok['l_number']}: {tok['type']} {tok['val']} [{tok['len']}]")
-            else:
-                raise Exception(f"Error: unexpected token \"{tokens[i+1]['val']}\" at line {tokens[i+1]['l_number']}")
-        else:
-            new_tokens.append({'type': tok['type'], 'len': tok['len'], 'val': tok['val'], 'l_number': tok['l_number']})
-            # print(f"{tok['l_number']}: {tok['type']} {tok['val']} [{tok['len']}]")
-        i += 1
-    return new_tokens
 
 
 def get_module_name(tokens):
@@ -163,9 +136,40 @@ def parse_subgroup(tokens):
     tokens = tokens[2:]
     depth = 1
     inputs = []
-    while depth > 0:
-        if tokens[0]['type'] == 'label':
-            i_name = tokens[0]['val']
+    c_input = {
+        'ig_name': None,
+        'range': None,
+        'except': [],
+        'exclude': []
+    }
+    # inputs[12:24] except[2] exclude[5:7] exclude[idx],
+    while len(tokens) > 0:
+        if c_input['ig_name'] == None:  # First token should be a label
+            nadl_assert(tokens[0]['type'] == 'label', f"Unexpected label: {tokens[0]['val']}", tokens[0]['l_number'])
+            nadl_assert(tokens[1]['type'] == 'open_bracket', f"Unexpected label: {tokens[1]['val']}", tokens[1]['l_number'])
+            nadl_assert(tokens[2]['type'] == 'range', f"Unexpected label: {tokens[2]['val']}", tokens[2]['l_number'])
+            nadl_assert(tokens[3]['type'] == 'close_bracket', f"Unexpected label: {tokens[3]['val']}", tokens[3]['l_number'])
+            c_input['ig_name'] = tokens[0]['val']
+            c_input['range'] = tokens[2]['val']
+            tokens = tokens[4:]
+        elif tokens[0]['type'] == 'keyword':
+            nadl_assert(tokens[0]['val'] in ['except', 'exclude'], f"Unexpected label: {tokens[0]['val']}", tokens[0]['l_number'])
+            nadl_assert(tokens[1]['type'] == 'open_bracket', f"Unexpected label: {tokens[1]['val']}", tokens[1]['l_number'])
+            nadl_assert(tokens[2]['type'] == 'range', f"Unexpected label: {tokens[2]['val']}", tokens[2]['l_number'])
+            g_field = tokens[0]['val']
+            tokens = tokens[2:]
+        elif tokens[0]['type'] == 'comma':
+            inputs.append({
+                'ig_name': c_input['ig_name'],
+                'range': c_input['range'],
+                'except': [i for i in c_input['except']],
+                'exclude': [i for i in c_input['exclude']]
+            })
+            c_input['ig_name'] = None
+            tokens = tokens[1:]
+        elif tokens[0]['type'] == 'close_bracket':
+            tokens = tokens[1:]
+            break
 
 
 
