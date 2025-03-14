@@ -116,6 +116,32 @@ def parse_inputs(tokens):
     return inputs, 'inputs', tokens
 
 
+def parse_group_input(tokens):
+    i_name = None
+    i_range = None
+    i_except = []
+    i_exclude = []
+
+    nadl_assert(tokens[0]['type'] == 'label', f"Unexpected label: {tokens[0]['val']}", tokens[0]['l_number'])
+    nadl_assert(tokens[1]['type'] == 'open_bracket', f"Unexpected label: {tokens[1]['val']}", tokens[1]['l_number'])
+    nadl_assert(tokens[2]['type'] == 'range', f"Unexpected label: {tokens[2]['val']}", tokens[2]['l_number'])
+    nadl_assert(tokens[3]['type'] == 'close_bracket', f"Unexpected label: {tokens[3]['val']}", tokens[3]['l_number'])
+    i_name = tokens[0]['val']
+    i_range = tokens[2]['val']
+    tokens = tokens[4:]
+    if (tokens[0]['type'] == 'comma') or (tokens[0]['type'] == 'close_bracket'):
+        return {
+            'i_name': None,
+            'i_range': None,
+            'except': [],
+            'exclude': []
+        }
+    nadl_assert(tokens[0]['type'] == 'keyword', f"Unexpected label: {tokens[0]['val']}", tokens[0]['l_number'])
+    nadl_assert(tokens[1]['type'] == 'open_bracket', f"Unexpected label: {tokens[1]['val']}", tokens[1]['l_number'])
+    nadl_assert(tokens[2]['type'] == 'range', f"Unexpected label: {tokens[2]['val']}", tokens[2]['l_number'])
+    
+
+
 def parse_subgroup(tokens):
     sg_name = None
     sg_size = 0
