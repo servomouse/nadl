@@ -19,8 +19,8 @@ module: micronet
 
     groups: [
         groupname1 8 x [inputs[16:31]] type poly,
-        groupname2 8 x [inputs[16:31] except[2] except[3:81] exclude[6] exclude[9:25]] type poly,
-        12 x [inputs[16:31] except[2] except[3:81] exclude[6] exclude[9:25]] type linear,
+        groupname2 8 x [inputs[16:31] except[idx] except[3:81] exclude[6] exclude[9:25]] type poly,
+        12 x [inputs[16:31] except[2] except[3:81] exclude[idx] exclude[9:25]] type linear,
         256 x [inputs[16:31] except[2] except[3:81] exclude[6] exclude[9:25]] type lalala
     ]
 
