@@ -131,14 +131,45 @@ def parse_group_input(tokens):
     tokens = tokens[4:]
     if (tokens[0]['type'] == 'comma') or (tokens[0]['type'] == 'close_bracket'):
         return {
-            'i_name': None,
-            'i_range': None,
+            'i_name': i_name,
+            'i_range': i_range,
             'except': [],
             'exclude': []
-        }
-    nadl_assert(tokens[0]['type'] == 'keyword', f"Unexpected label: {tokens[0]['val']}", tokens[0]['l_number'])
-    nadl_assert(tokens[1]['type'] == 'open_bracket', f"Unexpected label: {tokens[1]['val']}", tokens[1]['l_number'])
-    nadl_assert(tokens[2]['type'] == 'range', f"Unexpected label: {tokens[2]['val']}", tokens[2]['l_number'])
+        }, tokens
+    while len(tokens) > 0:
+        nadl_assert(tokens[0]['type'] == 'keyword', f"Unexpected label: {tokens[0]['val']}", tokens[0]['l_number'])
+        nadl_assert(tokens[1]['type'] == 'open_bracket', f"Unexpected label: {tokens[1]['val']}", tokens[1]['l_number'])
+        nadl_assert(tokens[2]['type'] == 'range', f"Unexpected label: {tokens[2]['val']}", tokens[2]['l_number'])
+        tok_type = tokens[0]['val']
+        ranges = [tokens[2]['val']]
+        tokens = tokens[3:]
+        while len(tokens) > 0:
+            if tokens[0]['type'] == 'close_bracket':
+                tokens = tokens[1:]
+                break
+            elif tokens[0]['type'] == 'comma':
+                tokens = tokens[1:]
+            elif tokens[0]['type'] == 'range':
+                ranges.append(tokens[0]['val'])
+            else:
+                raise Exception(f"Unexpected token at line {tokens[0]['l_number']}: {tokens[0]['val']}")
+        if tok_type == "except":
+            for i in tokens:
+                i_except.append(i)
+        if tok_type == "exclude":
+            for i in tokens:
+                i_exclude.append(i)
+        if tokens[0]['type'] == 'close_bracket':
+            tokens = tokens[1:]
+            break
+        if tokens[0]['type'] == 'comma':
+            tokens = tokens[1:]
+    return {
+        'i_name': i_name,
+        'i_range': i_range,
+        'except': [i for i in i_except],
+        'exclude': [i for i in i_exclude]
+    }, tokens
     
 
 
@@ -146,7 +177,7 @@ def parse_subgroup(tokens):
     sg_name = None
     sg_size = 0
     if tokens[0]['type'] == 'label':
-        nadl_assert(tokens[0]['val'] in ['inputs', 'outputs'],
+        nadl_assert(tokens[0]['val'] not in ['inputs', 'outputs', 'group', 'groups'],
                     f"invalid group name: {tokens[0]['val']}", tokens[0]['l_number'])
         sg_name = tokens[0]['val']
         tokens = tokens[1:]
@@ -156,7 +187,7 @@ def parse_subgroup(tokens):
     else:
         nadl_assert(False, f"invalid group definition: {tokens[0]['val']}\n\tCorrect definition looks like this: "
                             "\"<groupname> size x [...\", groupname is an optional label", tokens[0]['l_number'])
-    tokens = tokens[1:]
+    # tokens = tokens[1:]
     nadl_assert(tokens[0]['type'] == 'by', f"invalid group definition: {tokens[0]['val']}\n\tCorrect definition looks like this: "
                                             "\"<groupname> size x [...\", groupname is an optional label", tokens[0]['l_number'])
     tokens = tokens[2:]
@@ -170,50 +201,44 @@ def parse_subgroup(tokens):
     }
     # inputs[12:24] except[2] exclude[5:7] exclude[idx],
     while len(tokens) > 0:
-        if c_input['ig_name'] == None:  # First token should be a label
-            nadl_assert(tokens[0]['type'] == 'label', f"Unexpected label: {tokens[0]['val']}", tokens[0]['l_number'])
-            nadl_assert(tokens[1]['type'] == 'open_bracket', f"Unexpected label: {tokens[1]['val']}", tokens[1]['l_number'])
-            nadl_assert(tokens[2]['type'] == 'range', f"Unexpected label: {tokens[2]['val']}", tokens[2]['l_number'])
-            nadl_assert(tokens[3]['type'] == 'close_bracket', f"Unexpected label: {tokens[3]['val']}", tokens[3]['l_number'])
-            c_input['ig_name'] = tokens[0]['val']
-            c_input['range'] = tokens[2]['val']
-            tokens = tokens[4:]
-        elif tokens[0]['type'] == 'keyword':
-            nadl_assert(tokens[0]['val'] in ['except', 'exclude'], f"Unexpected label: {tokens[0]['val']}", tokens[0]['l_number'])
-            nadl_assert(tokens[1]['type'] == 'open_bracket', f"Unexpected label: {tokens[1]['val']}", tokens[1]['l_number'])
-            nadl_assert(tokens[2]['type'] == 'range', f"Unexpected label: {tokens[2]['val']}", tokens[2]['l_number'])
-            g_field = tokens[0]['val']
-            tokens = tokens[2:]
-        elif tokens[0]['type'] == 'comma':
-            inputs.append({
-                'ig_name': c_input['ig_name'],
-                'range': c_input['range'],
-                'except': [i for i in c_input['except']],
-                'exclude': [i for i in c_input['exclude']]
-            })
-            c_input['ig_name'] = None
-            tokens = tokens[1:]
-        elif tokens[0]['type'] == 'close_bracket':
+        i_group, tokens = parse_group_input(tokens)
+        if i_group is None:
+            break
+        inputs.append(i_group)
+        if tokens[0]['type'] == 'close_bracket':
             tokens = tokens[1:]
             break
+    return {
+        "name": sg_name,
+        "size": sg_size,
+        "inputs": [i for i in inputs]
+    }, tokens
 
 
 
 def parse_group(tokens):
+    print(f"Parsing {tokens}")
     g_name = tokens[0]['val']
     tokens = tokens[1:]
     g_items = []
     if (tokens[0]['type'] != 'colon') or (tokens[1]['type'] != 'open_bracket'):
         raise Exception(f"Syntax error at line {tokens[0]['l_number']}: Correct syntax is as following: \"groups: [...\" or \"outputs: [...\"")
     tokens = tokens[2:]
+    counter = 0
     while len(tokens) > 0:
         if tokens[0]['type'] == 'comma':
             tokens = tokens[1:]
         elif tokens[0]['type'] == 'close_bracket':
+            tokens = tokens[1:]
             break
         elif tokens[0]['type'] in ['int', 'label']:
             group, tokens = parse_subgroup(tokens)
+            if group is None:
+                break
             g_items.append(group)
+        counter += 1
+        if counter == 1000:
+            raise Exception("We are stuck!")
     return g_items, g_name, tokens
 
 
@@ -228,24 +253,73 @@ def parse_cluster(tokens):
         raise Exception(f"Syntax error at line {tokens[0]['l_number']}: Invalid group name: \"{tokens[0]['val']}\"")
 
 
+# def parse_module(tokens):
+#     mod_name, tokens = get_module_name(tokens)
+#     mod_inputs = []
+#     mod_groups = []
+#     mod_outputs = []
+#     counter = 0
+#     while True:
+#         cluster, cl_type, tokens = parse_cluster(tokens)
+#         if cluster is None:
+#             break
+#         if cl_type == 'inputs':
+#             for i in cluster:
+#                 mod_inputs.append(i)
+#         elif cl_type == 'groups':
+#             for i in cluster:
+#                 mod_groups.append(i)
+#         elif cl_type == 'outputs':
+#             for i in cluster:
+#                 mod_outputs.append(i)
+#         counter += 1
+#         if counter == 1000:
+#             raise Exception("We are stuck!")
+
+
 def parse_module(tokens):
-    mod_name, tokens = get_module_name(tokens)
-    mod_inputs = []
-    mod_groups = []
-    mod_outputs = []
-    while True:
-        cluster, cl_type, tokens = parse_cluster(tokens)
-        if cluster is None:
+    mod_name = None
+    mod_tokens = []
+    nadl_assert(tokens[0]['val'] in ['module', 'inputs', 'groups', 'outputs'], f"Invalid token: {tokens[0]['val']}", tokens[0]['l_number'])
+    if tokens[0]['val'] == 'module':
+        nadl_assert(tokens[1]['type'] == 'colon', f"Invalid token: expected \":\", got: {tokens[1]['val']}", tokens[1]['l_number'])
+        nadl_assert(tokens[2]['type'] == 'label', f"Invalid token: expected <module_name>, got: {tokens[2]['val']}", tokens[2]['l_number'])
+        mod_name = tokens[2]['val']
+        tokens = tokens[3:]
+    else:
+        mod_name = "default"
+    while len(tokens) > 0:
+        if tokens[0]['val'] == 'module':
             break
-        if cl_type == 'inputs':
-            for i in cluster:
-                mod_inputs.append(i)
-        elif cl_type == 'groups':
-            for i in cluster:
-                mod_groups.append(i)
-        elif cl_type == 'outputs':
-            for i in cluster:
-                mod_outputs.append(i)
+        mod_tokens.append(tokens[0])
+        tokens = tokens[1:]
+    return {
+        'name': mod_name,
+        'tokens': mod_tokens
+    }, tokens
+
+
+def new_parse_group(tokens):
+    nadl_assert(tokens[0]['val'] in ['inputs', 'groups', 'outputs'], f"Invalid token: {tokens[0]['val']}", tokens[0]['l_number'])
+    nadl_assert(tokens[1]['type'] == 'colon', f"Invalid token: expected \":\", got: {tokens[1]['val']}", tokens[1]['l_number'])
+    nadl_assert(tokens[2]['type'] == 'open_bracket', f"Invalid token: expected \"[\"], got: {tokens[2]['val']}", tokens[2]['l_number'])
+    depth = 1
+    g_name = tokens[0]['val']
+    g_tokens = []
+    tokens = tokens[3:]
+    while depth > 0:
+        if len(tokens) == 0:
+            raise Exception(f"Error: Unmatched brackets!")
+        if tokens[0]['type'] == 'open_bracket':
+            depth += 1
+        elif tokens[0]['type'] == 'close_bracket':
+            depth -= 1
+        g_tokens.append(tokens[0])
+        tokens = tokens[1:]
+    return {
+        'name': g_name,
+        'tokens': g_tokens
+    }, tokens
 
 
 def main(filename):
@@ -256,15 +330,26 @@ def main(filename):
         print(f"{line['l_number']}: {line['text']} [{line['len']}]")
     print("Tokens:\n\n\n")
     tokens = update_ranges(tokenize(lines))
-    for t in tokens:
-        print(t['val'])
+    # for t in tokens:
+    #     print(t['val'])
     modules = []
-    while True:
+    while len(tokens) > 0:
         module, tokens = parse_module(tokens)
         if module is None:
             break
         modules.append(module)
-    print(modules)
+    for i in range(len(modules)):
+        modules[i]['groups'] = []
+        tokens = modules[i]['tokens']
+        while len(tokens) > 0:
+            group, tokens = new_parse_group(tokens)
+            if group is None:
+                break
+            modules[i]['groups'].append(group)
+    for mod in modules:
+        print(f"Module name: {mod['name']}")
+        for group in mod['groups']:
+            print(f"Group name: {group['name']}")
 
 
 if __name__ == "__main__":
