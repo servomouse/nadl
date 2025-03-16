@@ -322,6 +322,41 @@ def new_parse_group(tokens):
     }, tokens
 
 
+def parse_inputs_group(tokens):
+    ranges = []
+    while len(tokens) > 0:
+        g_name = 'undefined'
+        if tokens[0]['type'] == 'label':
+            g_name = tokens[0]['val']
+            tokens = tokens[1:]
+        if tokens[0]['type'] == 'range':
+            ranges.append({
+                'name': g_name,
+                'range': tokens[0]['val']
+            })
+            tokens = tokens[1:]
+        if tokens[0]['type'] == 'comma':
+            tokens = tokens[1:]
+        elif tokens[0]['type'] == 'close_bracket':
+            tokens = tokens[1:]
+            break
+        else:
+            raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: {tokens[0]['val']}")
+    return ranges, tokens
+
+
+def new_parse_subgroup(tokens, g_type):
+    if g_type == 'inputs':
+        print('parsing inputs')
+        ranges, tokens = parse_inputs_group(tokens)
+        return {
+            'name': 'inputs',
+            'ranges': ranges
+        }, tokens
+    else:
+        print(f"parsing {g_type}")
+
+
 def main(filename):
     with open(filename) as f:
         data = f.read().split('\n')
@@ -346,6 +381,12 @@ def main(filename):
             if group is None:
                 break
             modules[i]['groups'].append(group)
+    for i in range(len(modules)):
+        for j in range(len(modules[i]['groups'])):
+            tokens = modules[i]['groups'][j]['tokens']
+            g_type = modules[i]['groups'][j]['name']
+            modules[i]['groups'][j]['groups'] = []
+            group, tokens = new_parse_subgroup(tokens, g_type)
     for mod in modules:
         print(f"Module name: {mod['name']}")
         for group in mod['groups']:
