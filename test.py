@@ -1,5 +1,7 @@
 from new_tokenizer import tokenize, update_ranges
 import re
+import json
+import sys
 
 
 def extract_substring(s, substring):
@@ -242,17 +244,6 @@ def parse_group(tokens):
     return g_items, g_name, tokens
 
 
-def parse_cluster(tokens):
-    if tokens[0]['val']  == 'inputs':
-        return parse_inputs(tokens[1:])
-    elif tokens[0]['val'] in ['outputs', 'groups']:
-        return parse_group(tokens)
-    elif tokens[0]['val']  == 'module':
-        return None, None, tokens
-    else:
-        raise Exception(f"Syntax error at line {tokens[0]['l_number']}: Invalid group name: \"{tokens[0]['val']}\"")
-
-
 # def parse_module(tokens):
 #     mod_name, tokens = get_module_name(tokens)
 #     mod_inputs = []
@@ -345,53 +336,335 @@ def parse_inputs_group(tokens):
     return ranges, tokens
 
 
-def new_parse_subgroup(tokens, g_type):
-    if g_type == 'inputs':
-        print('parsing inputs')
-        ranges, tokens = parse_inputs_group(tokens)
-        return {
-            'name': 'inputs',
-            'ranges': ranges
-        }, tokens
+def new_parse_subgroup(tokens):
+    print(f"Parsing {[t['val'] for t in tokens]}")
+    sg_name = 'default'
+    if tokens[0]['type'] == 'label':
+        sg_name = tokens[0]['val']
+        tokens = tokens[1:]
+    nadl_assert(tokens[0]['type'] == 'int', f"Invalid syntax: expected an integer, got: {tokens[0]['val']}", tokens[0]['l_number'])
+    nadl_assert(tokens[1]['type'] == 'by', f"Invalid syntax: expected \"x\", got: {tokens[1]['val']}", tokens[1]['l_number'])
+    sg_size = tokens[0]['val']
+    sg_tokens = []
+    tokens = tokens[2:]
+    nadl_assert(tokens[0]['type'] == 'open_bracket', f"Invalid syntax: expected \"[\", got: {tokens[0]['val']}", tokens[0]['l_number'])
+    tokens = tokens[1:]
+    depth = 1
+    while len(tokens) > 0:
+        print(tokens[0]['val'])
+        if tokens[0]['type'] == 'open_bracket':
+            depth += 1
+        elif tokens[0]['type'] == 'close_bracket':
+            depth -= 1
+        if (tokens[0]['type'] == 'comma') and (depth == 0):
+            tokens = tokens[1:]
+            break
+        sg_tokens.append(tokens[0])
+        tokens = tokens[1:]
+    # print([t['val'] for t in sg_tokens])
+    return {
+        'name': sg_name,
+        'size': sg_size,
+        'tokens': sg_tokens
+    }, tokens
+
+    
+
+
+def parse_complex_range(tokens):
+    nadl_assert(tokens[0]['type'] == 'open_bracket', f"Invalid syntax: expected \"[\", got: {tokens[0]['val']}", tokens[0]['l_number'])
+    ranges = []
+    tokens = tokens[1:]
+    while len(tokens) > 0:
+        if tokens[0]['type'] == 'comma':
+            pass
+        elif tokens[0]['type'] == 'range':
+            ranges.append(tokens[0]['val'])
+        elif tokens[0]['type'] == 'close_bracket':
+            tokens = tokens[1:]
+            break
+        else:
+            raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: {tokens[0]['val']}")
+        tokens = tokens[1:]
+    return ranges, tokens
+
+
+def new_parse_group_inputs(tokens):
+    # print(tokens[0])
+    # i_source = None
+    # i_ranges = []
+    i_exclude = []
+    i_except = []
+    nadl_assert(tokens[0]['type'] == 'label', f"Invalid syntax: expected a group name, got: {tokens[0]['val']}", tokens[0]['l_number'])
+    i_source = tokens[0]['val']
+    tokens = tokens[1:]
+    i_ranges, tokens = parse_complex_range(tokens)
+    while len(tokens) > 0:
+        if tokens[0]['type'] == 'close_bracket':
+            tokens = tokens[1:]
+            break
+        elif tokens[0]['type'] == 'keyword':
+            if tokens[0]['val'] not in ['except', 'exclude']:
+                raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: {tokens[0]['val']}")
+            if tokens[0]['val'] == 'except':
+                ranges, tokens = parse_complex_range(tokens)
+                for r in ranges:
+                    i_except.append(r)
+            elif tokens[0]['val'] == 'exclude':
+                ranges, tokens = parse_complex_range(tokens)
+                for r in ranges:
+                    i_exclude.append(r)
+    return {
+        'source': i_source,
+        'ranges': i_ranges,
+        'exclude': i_exclude,
+        'except': i_except
+    }, tokens
+
+
+
+# def main(filename):
+#     with open(filename) as f:
+#         data = f.read().split('\n')
+#     lines = prepare_data(data)
+#     for line in lines:
+#         print(f"{line['l_number']}: {line['text']} [{line['len']}]")
+#     # print("Tokens:\n\n\n")
+#     tokens = update_ranges(tokenize(lines))
+#     # for t in tokens:
+#     #     print(t['val'])
+#     modules = []
+#     while len(tokens) > 0:
+#         module, tokens = parse_module(tokens)
+#         if module is None:
+#             break
+#         modules.append(module)
+#     for i in range(len(modules)):
+#         modules[i]['groups'] = []
+#         tokens = modules[i]['tokens']
+#         while len(tokens) > 0:
+#             group, tokens = new_parse_group(tokens)
+#             if group is None:
+#                 break
+#             modules[i]['groups'].append(group)
+#     for i in range(len(modules)):
+#         for j in range(len(modules[i]['groups'])):
+#             tokens = modules[i]['groups'][j]['tokens']
+#             g_type = modules[i]['groups'][j]['name']
+#             group, tokens = new_parse_cluster(tokens, g_type)
+#             # print(dir(group))
+#             if g_type in ['groups', 'outputs']:
+#                 for k in range(len(group['subgroups'])):
+#                     group['subgroups'][k]['group_inputs'] = []
+#                     tokens = group['subgroups'][k]['tokens']
+#                     while len(tokens) > 0:
+#                         g_input, tokens = new_parse_group_inputs(tokens)
+#                         print(tokens, "\n")
+#                         if g_input is not None:
+#                             group['subgroups'][k]['group_inputs'].append(g_input)
+#             modules[i]['groups'][j]['groups'] = group
+#     with open('parse_result.json', 'w') as f:
+#         f.write(json.dumps(modules, indent=4))
+#     # for mod in modules:
+#     #     print(f"Module name: {mod['name']}")
+#     #     for group in mod['groups']:
+#     #         print(f"Group name: {group['name']}")
+
+
+def get_module_name(tokens):
+    if tokens[0]['val'] == 'module':
+        nadl_assert(tokens[1]['type'] == 'colon', f"Invalid token: expected \":\", got: {tokens[1]['val']}", tokens[1]['l_number'])
+        nadl_assert(tokens[2]['type'] == 'label', f"Invalid token: expected <module_name>, got: {tokens[2]['val']}", tokens[2]['l_number'])
+        mod_name = tokens[2]['val']
+        tokens = tokens[3:]
     else:
-        print(f"parsing {g_type}")
+        mod_name = "default"
+    return mod_name, tokens
 
 
-def main(filename):
+def parse_cluster(tokens):
+    if tokens[0]['val']  == 'inputs':
+        return parse_inputs(tokens[1:])
+    elif tokens[0]['val'] in ['outputs', 'groups']:
+        return parse_group(tokens)
+    elif tokens[0]['val']  == 'module':
+        return None, None, tokens
+    else:
+        raise Exception(f"Syntax error at line {tokens[0]['l_number']}: Invalid group name: \"{tokens[0]['val']}\"")
+
+
+# def parse_cluster(tokens, g_type):
+#     if g_type == 'inputs':
+#         print('parsing inputs')
+#         ranges, tokens = parse_inputs_group(tokens)
+#         return {
+#             'name': 'inputs',
+#             'ranges': ranges
+#         }, tokens
+#     else:
+#         print(f"parsing {g_type}")
+#         subgroups = []
+#         while len(tokens) > 0:
+#             subgroup, tokens = new_parse_subgroup(tokens)
+#             subgroups.append(subgroup)
+#         return {
+#             'name': g_type,
+#             'subgroups': subgroups
+#         }, tokens
+
+
+def parse_module_inputs(tokens):
+    """ Returns the ranges array [range0, range1, ...] and remaining tokens"""
+    ranges = []
+    while len(tokens) > 0:
+        # print(tokens) 
+        g_name = 'undefined'
+        if tokens[0]['type'] == 'label':
+            g_name = tokens[0]['val']
+            tokens = tokens[1:]
+        if tokens[0]['type'] == 'range':
+            ranges.append({
+                'name': g_name,
+                'range': tokens[0]['val']
+            })
+            tokens = tokens[1:]
+        if len(tokens) == 0:
+            break
+        if tokens[0]['type'] == 'comma':
+            tokens = tokens[1:]
+        elif tokens[0]['type'] == 'close_bracket':
+            tokens = tokens[1:]
+            break
+        else:
+            raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: {tokens[0]['val']}")
+    return ranges
+
+
+def parse_subgroups(tokens):
+    ''' Returns [{'name': group name, 'size': int, 'tokens': [tokens]}, ...] '''
+    subgroups = []
+    while len(tokens) > 0:
+        sg_name = 'undefined'
+        if tokens[0]['type'] == 'label':
+            sg_name = tokens[0]['val']
+            tokens = tokens[1:]
+        if tokens[0]['type'] == 'int':
+            sg_size = tokens[0]['val']
+            tokens = tokens[1:]
+        nadl_assert(tokens[0]['type'] == 'by', f"Invalid token: expected: \"x\", got: {tokens[0]['val']}", tokens[0]['l_number'])
+        nadl_assert(tokens[1]['type'] == 'open_bracket', f"Invalid token: expected: \"[\", got: {tokens[1]['val']}", tokens[1]['l_number'])
+        tokens = tokens[2:]
+        sg_tokens = []
+        depth = 1
+        while len(tokens) > 0:
+            if tokens[0]['type'] == 'open_bracket':
+                depth += 1
+            elif tokens[0]['type'] == 'close_bracket':
+                depth -= 1
+            elif (tokens[0]['type'] == 'comma') and (depth == 0):
+                tokens = tokens[1:]
+                break
+            sg_tokens.append(tokens[0])
+            tokens = tokens[1:]
+        subgroups.append({
+            'name': sg_name,
+            'size': sg_size,
+            'tokens': sg_tokens
+        })
+    return subgroups
+
+
+def check_module_group_definition(tokens):
+    nadl_assert(tokens[0]['val'] in ['inputs', 'outputs', 'groups'],
+                f"Invalid token: expected: \"inputs\"/\"groups\"/\"outputs\", got: {tokens[0]['val']}",
+                tokens[0]['l_number'])
+    nadl_assert(tokens[1]['type'] == 'colon', f"Invalid token: expected: \":\", got: {tokens[1]['val']}", tokens[1]['l_number'])
+    nadl_assert(tokens[2]['type'] == 'open_bracket', f"Invalid token: expected: \"[\", got: {tokens[2]['val']}", tokens[2]['l_number'])
+
+
+def get_module_group_tokens(tokens):
+    g_name = tokens[0]['val']
+    g_tokens = []
+    tokens = tokens[3:]
+    depth = 1
+    while len(tokens) > 0:
+        if tokens[0]['type'] == 'open_bracket':
+            depth += 1
+        elif tokens[0]['type'] == 'close_bracket':
+            depth -= 1
+        if depth == 0:
+            tokens = tokens[1:]
+            break
+        g_tokens.append(tokens[0])
+        tokens = tokens[1:]
+    return g_name, g_tokens, tokens
+
+
+def parse_module_groups(mod_name, tokens):
+    """ A module group looks like this: inputs/groups/outputs: [...] """
+    mod_groups = {}
+    while len(tokens) > 0:
+        check_module_group_definition(tokens)
+        g_name, g_tokens, tokens = get_module_group_tokens(tokens)
+        if g_name in mod_groups:
+            raise Exception(f"Error: module {mod_name} contains multiple definitions of the {g_name} field")
+        if g_name == 'inputs':
+            i_ranges = parse_module_inputs(g_tokens)
+            mod_groups['inputs'] = i_ranges
+        elif g_name in ['groups', 'outputs']:
+            s_groups = parse_subgroups(g_tokens)    # Returns [{'name': group name, 'size': int, 'tokens': [tokens]}, ...]
+            # TODO: Add subgroup inputs parsing
+            mod_groups[g_name] = s_groups
+    return mod_groups
+
+
+def parse_module_tokens(tokens):
+    """ Returns {'name': module_name, 'tokens': [tokens]} """
+    mod_name = None
+    mod_tokens = []
+    nadl_assert(tokens[0]['val'] in ['module', 'inputs', 'groups', 'outputs'], f"Invalid token: {tokens[0]['val']}", tokens[0]['l_number'])
+    mod_name, tokens = get_module_name(tokens)
+    while len(tokens) > 0:
+        if tokens[0]['val'] == 'module':
+            break
+        mod_tokens.append(tokens[0])
+        tokens = tokens[1:]
+    return {
+        'name': mod_name,
+        'tokens': mod_tokens
+    }, tokens
+
+
+def check_module(mod_name, mod_groups):
+    if 'inputs' not in mod_groups:
+        raise Exception(f"Error: module {mod_name} does not contain definition of the \"inputs\" field!")
+    if 'outputs' not in mod_groups:
+        raise Exception(f"Error: module {mod_name} does not contain definition of the \"outputs\" field!")
+
+
+def parse_modules(tokens):
+    modules = {}
+    while len(tokens) > 0:
+        module, tokens = parse_module_tokens(tokens)        # Returns {'name': module_name, 'tokens': [tokens]} and tokens
+        mod_groups = parse_module_groups(module['name'], module['tokens'])  # Returns {'inputs': [...], 'outputs': [...], 'groups': [...]}, groups may be missing
+        modules[module['name']] = mod_groups
+        check_module(module['name'], mod_groups)
+    return modules
+
+
+def new_main(filename):
     with open(filename) as f:
         data = f.read().split('\n')
     lines = prepare_data(data)
     for line in lines:
         print(f"{line['l_number']}: {line['text']} [{line['len']}]")
-    print("Tokens:\n\n\n")
+    # print("Tokens:\n\n\n")
     tokens = update_ranges(tokenize(lines))
-    # for t in tokens:
-    #     print(t['val'])
-    modules = []
-    while len(tokens) > 0:
-        module, tokens = parse_module(tokens)
-        if module is None:
-            break
-        modules.append(module)
-    for i in range(len(modules)):
-        modules[i]['groups'] = []
-        tokens = modules[i]['tokens']
-        while len(tokens) > 0:
-            group, tokens = new_parse_group(tokens)
-            if group is None:
-                break
-            modules[i]['groups'].append(group)
-    for i in range(len(modules)):
-        for j in range(len(modules[i]['groups'])):
-            tokens = modules[i]['groups'][j]['tokens']
-            g_type = modules[i]['groups'][j]['name']
-            modules[i]['groups'][j]['groups'] = []
-            group, tokens = new_parse_subgroup(tokens, g_type)
-    for mod in modules:
-        print(f"Module name: {mod['name']}")
-        for group in mod['groups']:
-            print(f"Group name: {group['name']}")
+    modules = parse_modules(tokens)
+    with open('parse_result.json', 'w') as f:
+        f.write(json.dumps(modules, indent=4))
+
 
 
 if __name__ == "__main__":
-    main("nadl_example.nad")
+    new_main("nadl_example.nad")
