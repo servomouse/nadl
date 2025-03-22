@@ -26,28 +26,26 @@ def update_ranges(tokens):
     new_tokens = []
     i = 0
     while i < len(tokens):
-        tok = tokens[i]
         if tokens[i]['type'] == 'int':
             if (tokens[i+1]['type'] == 'colon') and (tokens[i+2]['type'] == 'int'):
                 val = f"{tokens[i]['val']}{tokens[i+1]['val']}{tokens[i+2]['val']}"
                 t_len = tokens[i]['len'] + tokens[i+1]['len'] + tokens[i+2]['len']
                 new_tokens.append({'type': 'range', 'len': t_len, 'val': [tokens[i]['val'], tokens[i+2]['val']], 'l_number': tokens[i]['l_number']})
-                # print(f"{tok['l_number']}: range {val} [{t_len}]")
                 i += 2
             elif (tokens[i+1]['type'] == 'comma') or (tokens[i+1]['type'] == 'close_bracket'):
-                new_tokens.append({'type': 'range', 'len': tokens[i]['len'], 'val': [tokens[i]['val'], tokens[i]['val']], 'l_number': tokens[i]['l_number']})
-                # print(f"{tok['l_number']}: range {tok['val']} [{tok['len']}]")
+                if (tokens[i+1]['type'] == 'close_bracket') and (tokens[i-1]['type'] == 'open_bracket') and (tokens[i-2]['type'] == 'label'):
+                    new_tokens.append({'type': tokens[i]['type'], 'len': tokens[i]['len'], 'val': tokens[i]['val'], 'l_number': tokens[i]['l_number']})
+                else:
+                    new_tokens.append({'type': 'range', 'len': tokens[i]['len'], 'val': [tokens[i]['val'], tokens[i]['val']], 'l_number': tokens[i]['l_number']})
             elif tokens[i+1]['type'] == 'by':
-                new_tokens.append({'type': tok['type'], 'len': tok['len'], 'val': tok['val'], 'l_number': tok['l_number']})
-                # print(f"{tok['l_number']}: {tok['type']} {tok['val']} [{tok['len']}]")
+                new_tokens.append({'type': tokens[i]['type'], 'len': tokens[i]['len'], 'val': tokens[i]['val'], 'l_number': tokens[i]['l_number']})
             else:
                 raise Exception(f"Error: unexpected token \"{tokens[i+1]['val']}\" at line {tokens[i+1]['l_number']}")
         elif (tokens[i]['type'] == 'int') and (tokens[i+1]['type'] == 'close_bracket'):
                 new_tokens.append({'type': 'range', 'len': t_len, 'val': 'idx', 'l_number': tokens[i]['l_number']})
                 i += 1
         else:
-            new_tokens.append({'type': tok['type'], 'len': tok['len'], 'val': tok['val'], 'l_number': tok['l_number']})
-            # print(f"{tok['l_number']}: {tok['type']} {tok['val']} [{tok['len']}]")
+            new_tokens.append({'type': tokens[i]['type'], 'len': tokens[i]['len'], 'val': tokens[i]['val'], 'l_number': tokens[i]['l_number']})
         i += 1
     return new_tokens
 
@@ -63,7 +61,6 @@ def parse_token(lines):
     global tokens
     if len(lines) == 0:
         return None, []
-    # print(f"Parsing {lines[0]['text']}")
     line = lines[0]['text']
     while len(line) > 0:
         t = starts_with_token(line, tokens)
