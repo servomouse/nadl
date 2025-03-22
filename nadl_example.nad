@@ -24,8 +24,8 @@ groups: [
 ]
 
 outputs: [
-    4 x [group[2]] type poly,
-    4 x [group[3]] type linear
+    4 x [groups[2]] type poly,
+    4 x [groups[3]] type linear
 ]
 
 module: micronet
@@ -38,12 +38,12 @@ module: micronet
     groups: [
         groupname1 8 x [inputs[16:31]] type poly,
         groupname2 8 x [inputs[16:31] except[idx] except[3:81] exclude[6] exclude[9:25]] type poly,
-        12 x [inputs[16:31] except[2] except[3:81] exclude[idx] exclude[9:25]] type linear,
+        12 x [inputs[16:31] except[2] exclude[idx], groups[0][2:4] except[3]] type linear,
         256 x [inputs[16:31] except[2] except[3:81] exclude[6] exclude[9:25]] type lalala
     ]
 
     outputs: [
-        4 x [group[2]] type poly
+        4 x [groups[2]] type poly
     ]
 
 # module: micronet1
