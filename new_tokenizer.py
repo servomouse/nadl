@@ -9,43 +9,61 @@ symbols = [
 digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 tokens = {
-    ',': {'type': 'comma', 'len': 1, 'val': ',', 'l_number': 0},
-    'x': {'type': 'by', 'len': 1, 'val': 'x', 'l_number': 0},
-    ':': {'type': 'colon', 'len': 1, 'val': ':', 'l_number': 0},
-    '[': {'type': 'open_bracket', 'len': 1, 'val': '[', 'l_number': 0},
-    ']': {'type': 'close_bracket', 'len': 1, 'val': ']', 'l_number': 0},
-    'module': {'type': 'keyword', 'len': 6, 'val': 'module', 'l_number': 0},
-    'except': {'type': 'keyword', 'len': 6, 'val': 'except', 'l_number': 0},
-    'exclude': {'type': 'keyword', 'len': 7, 'val': 'exclude', 'l_number': 0},
-    'type': {'type': 'keyword', 'len': 4, 'val': 'type', 'l_number': 0},
-    # 'idx': {'type': 'range', 'len': 3, 'val': 'idx', 'l_number': 0},
+    ',': {'type': 'comma', 'val': ',', 'l_number': 0},
+    'x': {'type': 'by', 'val': 'x', 'l_number': 0},
+    ':': {'type': 'colon', 'val': ':', 'l_number': 0},
+    '[': {'type': 'open_bracket', 'val': '[', 'l_number': 0},
+    ']': {'type': 'close_bracket', 'val': ']', 'l_number': 0},
+    'module': {'type': 'keyword', 'val': 'module', 'l_number': 0},
+    'except': {'type': 'keyword', 'val': 'except', 'l_number': 0},
+    'exclude': {'type': 'keyword', 'val': 'exclude', 'l_number': 0},
+    'type': {'type': 'keyword', 'val': 'type', 'l_number': 0},
 }
+
+
+def pattern(elements, tokens):
+    for i in range(len(elements)):
+        if elements[i] is None:
+            continue
+        key, val = list(elements[i].items())[0]
+        if tokens[i][key] != val:
+            return False
+    return True
 
 
 def update_ranges(tokens):
     new_tokens = []
     i = 0
+    group_idx_pattern = [{'type': 'label'}, {'type': 'open_bracket'}, None, {'type': 'close_bracket'}]
     while i < len(tokens):
         if tokens[i]['type'] == 'int':
-            if (tokens[i+1]['type'] == 'colon') and (tokens[i+2]['type'] == 'int'):
-                val = f"{tokens[i]['val']}{tokens[i+1]['val']}{tokens[i+2]['val']}"
-                t_len = tokens[i]['len'] + tokens[i+1]['len'] + tokens[i+2]['len']
-                new_tokens.append({'type': 'range', 'len': t_len, 'val': [tokens[i]['val'], tokens[i+2]['val']], 'l_number': tokens[i]['l_number']})
+            if pattern([ {'type': 'colon'}, {'type': 'int'}], tokens[i+1:]):
+                new_tokens.append({
+                    'type': 'range',
+                    'val': [tokens[i]['val'], tokens[i+2]['val']],
+                    'l_number': tokens[i]['l_number']
+                })
                 i += 2
+            elif (tokens[i+1]['type'] == 'by') or pattern(group_idx_pattern, tokens[i-2:]):
+                new_tokens.append({
+                    'type': tokens[i]['type'],
+                    'val': tokens[i]['val'],
+                    'l_number': tokens[i]['l_number']
+                })
             elif (tokens[i+1]['type'] == 'comma') or (tokens[i+1]['type'] == 'close_bracket'):
-                if (tokens[i+1]['type'] == 'close_bracket') and (tokens[i-1]['type'] == 'open_bracket') and (tokens[i-2]['type'] == 'label'):
-                    new_tokens.append({'type': tokens[i]['type'], 'len': tokens[i]['len'], 'val': tokens[i]['val'], 'l_number': tokens[i]['l_number']})
-                else:
-                    new_tokens.append({'type': 'range', 'len': tokens[i]['len'], 'val': [tokens[i]['val'], tokens[i]['val']], 'l_number': tokens[i]['l_number']})
-            elif tokens[i+1]['type'] == 'by':
-                new_tokens.append({'type': tokens[i]['type'], 'len': tokens[i]['len'], 'val': tokens[i]['val'], 'l_number': tokens[i]['l_number']})
+                new_tokens.append({
+                    'type': 'range',
+                    'val': [tokens[i]['val'], tokens[i]['val']],
+                    'l_number': tokens[i]['l_number']
+                })
             else:
                 raise Exception(f"Error: unexpected token \"{tokens[i+1]['val']}\" at line {tokens[i+1]['l_number']}")
-        elif (tokens[i]['type'] == 'int') and (tokens[i+1]['type'] == 'close_bracket'):
-                new_tokens.append({'type': 'range', 'len': t_len, 'val': 'idx', 'l_number': tokens[i]['l_number']})
-                i += 1
         else:
-            new_tokens.append({'type': tokens[i]['type'], 'len': tokens[i]['len'], 'val': tokens[i]['val'], 'l_number': tokens[i]['l_number']})
+            new_tokens.append({
+                'type': tokens[i]['type'],
+                'val': tokens[i]['val'],
+                'l_number': tokens[i]['l_number']
+            })
         i += 1
     return new_tokens
 
@@ -65,11 +83,10 @@ def parse_token(lines):
     while len(line) > 0:
         t = starts_with_token(line, tokens)
         if t:
-            line = line[tokens[t]['len']:].strip()
+            line = line[len(tokens[t]['val']):].strip()
             lines[0]['text'] = line
             return {
                 'type': tokens[t]['type'],
-                'len': tokens[t]['len'],
                 'val': tokens[t]['val'],
                 'l_number': lines[0]['l_number']
             }, lines if len(line) > 0 else lines[1:]
@@ -85,7 +102,11 @@ def parse_token(lines):
                     else:
                         break
                 lines[0]['text'] = line
-                return {'type': 'label', 'len': len(tok), 'val': tok, 'l_number': lines[0]['l_number']}, lines if len(line) > 0 else lines[1:]
+                return {
+                    'type': 'label',
+                    'val': tok,
+                    'l_number': lines[0]['l_number']
+                }, lines if len(line) > 0 else lines[1:]
             elif line[0] in digits:
                 while len(line) > 0:
                     if line[0] in digits:
@@ -94,7 +115,11 @@ def parse_token(lines):
                     else:
                         break
                 lines[0]['text'] = line
-                return {'type': 'int', 'len': len(tok), 'val': int(tok), 'l_number': lines[0]['l_number']}, lines if len(line) > 0 else lines[1:]
+                return {
+                    'type': 'int',
+                    'val': int(tok),
+                    'l_number': lines[0]['l_number']
+                }, lines if len(line) > 0 else lines[1:]
     return None, lines[1:]
 
 
