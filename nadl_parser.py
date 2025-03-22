@@ -3,11 +3,6 @@ import json
 import sys
 
 
-# Throws exception if expression is False
-def nadl_assert(expression, error_str, line):
-    if not expression:
-        raise Exception(f"Error at line {line}: {error_str}")
-
 def prepare_data(data):
     lines = []
     counter = 0
@@ -23,6 +18,10 @@ def prepare_data(data):
     return lines
 
 
+def nadl_assert(expression, error_str, line):
+    """ Throws an exception if expression is False """
+    if not expression:
+        raise Exception(f"Error at line {line}: {error_str}")
 
 
 def get_module_name(tokens):
@@ -135,66 +134,86 @@ def get_module_group_tokens(tokens):
 
 def parse_complex_range(tokens):
     nadl_assert(tokens[0]['type'] == 'open_bracket', f"Invalid syntax: expected \"[\", got: {tokens[0]['val']}", tokens[0]['l_number'])
-    ranges = []
-    tokens = tokens[1:]
+    
+    if tokens[1]['type'] == 'range':
+        c_range = tokens[1]['val']
+    elif tokens[1]['type'] == 'label' and tokens[1]['val'] == 'idx':
+        c_range = tokens[1]['val']
+    elif tokens[1]['type'] == 'colon':
+        c_range = 'full'
+    else:
+        raise Exception(f"Error at line {tokens[1]['l_number']}: expected: range, got: {tokens[1]['val']}")
+
+    nadl_assert(tokens[2]['type'] == 'close_bracket', f"Invalid syntax: expected \"]\", got: {tokens[2]['val']}", tokens[2]['l_number'])
+
+    return c_range, tokens[3:]
+
+
+def parse_subgroup_excludes(tokens):
+    s_except = []
+    s_exclude = []
     while len(tokens) > 0:
-        if tokens[0]['type'] == 'comma':
-            pass
-        elif tokens[0]['type'] == 'range':
-            ranges.append(tokens[0]['val'])
-        elif tokens[0]['type'] == 'label' and tokens[0]['val'] == 'idx':
-            ranges.append(tokens[0]['val'])
-        elif tokens[0]['type'] == 'close_bracket':
+        if tokens[0]['type'] == 'close_bracket':
+            break
+        elif tokens[0]['type'] == 'comma':
             tokens = tokens[1:]
             break
+        elif tokens[0]['type'] == 'keyword':
+            nadl_assert(tokens[1]['type'] == 'open_bracket', f"Expected: \"[\", got: {tokens[1]['val']}", tokens[1]['l_number'])
+            if tokens[0]['val'] == 'except':
+                temp_range, tokens = parse_complex_range(tokens[1:])
+                s_except.append(temp_range)
+            elif tokens[0]['val'] == 'exclude':
+                temp_range, tokens = parse_complex_range(tokens[1:])
+                s_exclude.append(temp_range)
+            else:
+                raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: {tokens[0]['val']}")
         else:
-            raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: {tokens[0]['val']} of type {tokens[0]['type']}")
-        tokens = tokens[1:]
-    return ranges, tokens
+            raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: {tokens[0]['val']}")
+    return s_except, s_exclude, tokens
 
 
 def parse_subgroup_inputs_and_type(tokens):
+    inputs = []
     while len(tokens) > 0:
         nadl_assert(tokens[0]['type'] == 'label', f"Expected a label, got: {tokens[0]['val']}", tokens[0]['l_number'])
         nadl_assert(tokens[1]['type'] == 'open_bracket', f"Expected \"[\", got: {tokens[1]['val']}", tokens[1]['l_number'])
         s_name = tokens[0]['val']
-        source_ranges, tokens = parse_complex_range(tokens[1:])
-        s_range = [i for i in source_ranges]
-        s_except = []
-        s_exclude = []
-        while len(tokens) > 0:
-            if tokens[0]['type'] == 'close_bracket':
-                tokens = tokens[1:]
-                break
-            elif tokens[0]['type'] == 'keyword':
-                nadl_assert(tokens[1]['type'] == 'open_bracket', f"Expected: \"[\", got: {tokens[1]['val']}", tokens[1]['l_number'])
-                if tokens[0]['val'] == 'except':
-                    temp_ranges, tokens = parse_complex_range(tokens[1:])
-                    for t in temp_ranges:
-                        s_except.append(t)
-                elif tokens[0]['val'] == 'exclude':
-                    temp_ranges, tokens = parse_complex_range(tokens[1:])
-                    for t in temp_ranges:
-                        s_exclude.append(t)
-                else:
-                    raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: {tokens[0]['val']}")
-            else:
-                raise Exception(f"Error at line {tokens[0]['l_number']}: Unexpected token: {tokens[0]['val']}")
-        nadl_assert(tokens[0]['type'] == 'keyword', f"Expected \"type\", got: {tokens[0]['val']}", tokens[0]['l_number'])
-        nadl_assert(tokens[0]['val'] == 'type', f"Expected \"type\", got: {tokens[0]['val']}", tokens[0]['l_number'])
-        nadl_assert(tokens[1]['type'] == 'label', f"Expected a label, got: {tokens[1]['val']}", tokens[1]['l_number'])
-        s_type = tokens[1]['val']
-        return {
-            's_name': s_name,
-            's_range': s_range,
-            's_exclude': s_exclude,
-            's_except': s_except,
-            'sg_type': s_type
-        }
+        s_line = tokens[0]['l_number']
+        if tokens[2]['type'] == 'int':
+            nadl_assert(tokens[3]['type'] == 'close_bracket', f"Expected \"]\", got: {tokens[3]['val']}", tokens[3]['l_number'])
+            s_idx = tokens[2]['val']
+            tokens = tokens[4:]
+        else:
+            s_idx = None
+            tokens = tokens[1:]
+        if tokens[0]['type'] == 'open_bracket':
+            s_range, tokens = parse_complex_range(tokens)
+        else:
+            s_range = []
+        s_except, s_exclude, tokens = parse_subgroup_excludes(tokens)
+        inputs.append({
+            'name': s_name,
+            'idx': s_idx,
+            'range': s_range,
+            'exclude': s_exclude,
+            'except': s_except
+        })
+        if tokens[0]['type'] == 'close_bracket':
+            tokens = tokens[1:]
+            break
+    nadl_assert(tokens[0]['type'] == 'keyword', f"Expected \"type\", got: {tokens[0]['val']}", tokens[0]['l_number'])
+    nadl_assert(tokens[0]['val'] == 'type', f"Expected \"type\", got: {tokens[0]['val']}", tokens[0]['l_number'])
+    nadl_assert(tokens[1]['type'] == 'label', f"Expected a label, got: {tokens[1]['val']}", tokens[1]['l_number'])
+    g_type = tokens[1]['val']
+    return {
+        'inputs': inputs,
+        'type': g_type
+    }
 
 
 def parse_module_groups(mod_name, tokens):
-    """ A module group looks like this: inputs/groups/outputs: [...] """
+    """ Returns {'inputs': [...], 'outputs': [...], 'groups': [...]}, groups may be missing """
     mod_groups = {}
     while len(tokens) > 0:
         check_module_group_definition(tokens)
@@ -205,25 +224,27 @@ def parse_module_groups(mod_name, tokens):
             i_ranges = parse_module_inputs(g_tokens)
             mod_groups['inputs'] = i_ranges
         elif g_name in ['groups', 'outputs']:
-            mod_groups[g_name] = {}
-            mod_groups[g_name]['groups'] = []
-            s_groups = parse_subgroups(g_tokens)    # Returns [{'name': group name, 'size': int, 'tokens': [tokens]}, ...]
+            mod_groups[g_name] = []
+            s_groups = parse_subgroups(g_tokens)
             for sg in s_groups:
                 temp = parse_subgroup_inputs_and_type(sg['tokens'])
-                mod_groups[g_name]['groups'].append({
+                mod_groups[g_name].append({
                     'name': sg['name'],
                     'size': sg['size'],
-                    's_name': temp['s_name'],
-                    's_range': temp['s_range'],
-                    's_exclude': temp['s_exclude'],
-                    's_except': temp['s_except'],
-                    'sg_type': temp['sg_type']
+                    'type': temp['type'],
+                    'inputs': [{
+                        'name': i_group['name'],
+                        'idx': i_group['idx'],
+                        'range': i_group['range'],
+                        'exclude': i_group['exclude'],
+                        'except': i_group['except']} for i_group in temp['inputs']
+                    ]
                 })
     return mod_groups
 
 
 def parse_module_tokens(tokens):
-    """ Returns {'name': module_name, 'tokens': [tokens]} """
+    """ Returns {'name': module_name, 'tokens': [tokens]} and tokens """
     mod_name = None
     mod_tokens = []
     nadl_assert(tokens[0]['val'] in ['module', 'inputs', 'groups', 'outputs'], f"Invalid token: {tokens[0]['val']}", tokens[0]['l_number'])
@@ -249,8 +270,10 @@ def check_module(mod_name, mod_groups):
 def parse_modules(tokens):
     modules = {}
     while len(tokens) > 0:
-        module, tokens = parse_module_tokens(tokens)        # Returns {'name': module_name, 'tokens': [tokens]} and tokens
-        mod_groups = parse_module_groups(module['name'], module['tokens'])  # Returns {'inputs': [...], 'outputs': [...], 'groups': [...]}, groups may be missing
+        module, tokens = parse_module_tokens(tokens)
+        mod_groups = parse_module_groups(module['name'], module['tokens'])
+        if module['name'] in modules:
+            raise Exception(f"Error: Module name duplicated: {module['name']}")
         modules[module['name']] = mod_groups
         check_module(module['name'], mod_groups)
     return modules
@@ -260,14 +283,14 @@ def parse_file(filename):
     with open(filename) as f:
         data = f.read().split('\n')
     lines = prepare_data(data)
-    for line in lines:
-        print(f"{line['l_number']}: {line['text']} [{line['len']}]")
+    # for line in lines:
+    #     print(f"{line['l_number']}: {line['text']} [{line['len']}]")
     tokens = update_ranges(tokenize(lines))
-    modules = parse_modules(tokens)
-    with open('parse_result.json', 'w') as f:
-        f.write(json.dumps(modules, indent=4))
+    return parse_modules(tokens)
 
 
 if __name__ == "__main__":
     filename = sys.argv[1] if len(sys.argv) > 1 else "nadl_example.nad"
-    parse_file(filename)
+    modules = parse_file(filename)
+    with open('parse_result.json', 'w') as f:
+        f.write(json.dumps(modules, indent=4))
