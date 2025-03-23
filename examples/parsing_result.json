@@ -1,0 +1,231 @@
+[
+
+    {
+        "name": "default",
+        "inputs": {
+            "size": 32,
+            "ranges": [
+                {
+                    "name": "main_inputs",
+                    "range": [0, 12]
+                },
+                {
+                    "name": "single_input",
+                    "range": [12, 12]
+                },
+                {
+                    "name": "undefined",
+                    "range": [13, 32]
+                }
+            ]
+        },
+        "groups": {
+            "size": 284,
+            "groups": [
+                {
+                    "name": "group1",
+                    "size": 8,
+                    "range": [0, 8],
+                    "type": "poly",
+                    "inputs": [
+                        {
+                            "name": "inputs",
+                            "idx": null,
+                            "range": [16, 31],
+                            "except": [],
+                            "exclude": []
+                        }
+                    ]
+                },
+                {
+                    "name": "group2",
+                    "size": 8,
+                    "range": [8, 16],
+                    "type": "poly",
+                    "inputs": [
+                        {
+                            "name": "inputs",
+                            "idx": null,
+                            "range": [16, 31],
+                            "except": ["idx", [3, 81]],
+                            "exclude": [[6, 6], [9, 25]]
+                        }
+                    ]
+                },
+                {
+                    "name": "undefined",
+                    "size": 12,
+                    "range": [16, 28],
+                    "type": "linear",
+                    "inputs": [
+                        {
+                            "name": "inputs",
+                            "idx": null,
+                            "range": [16, 31],
+                            "except": [[2, 2], [3, 81]],
+                            "exclude": ["idx", [9, 25]]
+                        }
+                    ]
+                },
+                {
+                    "name": "undefined",
+                    "size": 256,
+                    "range": [28, 284],
+                    "type": "linear",
+                    "inputs": [
+                        {
+                            "name": "inputs",
+                            "idx": null,
+                            "range": [16, 31],
+                            "except": [[2, 2], [3, 81]],
+                            "exclude": [[6, 6], [9, 25]]
+                        }
+                    ]
+                }
+            ]
+        },
+        "outputs": {
+            "size": 8,
+            "groups": [
+                {
+                    "name": "undefined",
+                    "size": 4,
+                    "range": [0, 4],
+                    "type": "poly",
+                    "inputs": [
+                        {
+                            "name": "groups",
+                            "idx": 2,
+                            "range": [],
+                            "except": [],
+                            "exclude": []
+                        }
+                    ]
+                },
+                {
+                    "name": "undefined",
+                    "size": 4,
+                    "range": [4, 8],
+                    "type": "linear",
+                    "inputs": [
+                        {
+                            "name": "groups",
+                            "idx": 3,
+                            "range": [],
+                            "except": [],
+                            "exclude": []
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        "name": "micronet",
+        "inputs": {
+            "size": 32,
+            "ranges": [
+                {
+                    "name": "main_input",
+                    "range": [0, 0]
+                },
+                {
+                    "name": "undefined",
+                    "range": [1, 32]
+                }
+            ]
+        },
+        "groups": {
+            "size": 284,
+            "groups": [
+                {
+                    "name": "groupname1",
+                    "size": 8,
+                    "range": [0, 8],
+                    "type": "poly",
+                    "inputs": [
+                        {
+                            "name": "inputs",
+                            "idx": null,
+                            "range": [16, 31],
+                            "except": [],
+                            "exclude": []
+                        }
+                    ]
+                },
+                {
+                    "name": "groupname2",
+                    "size": 8,
+                    "range": [8, 16],
+                    "type": "poly",
+                    "inputs": [
+                        {
+                            "name": "inputs",
+                            "idx": null,
+                            "range": [16, 31],
+                            "except": ["idx", [3, 81]],
+                            "exclude": [[6, 6], [9, 25]]
+                        }
+                    ]
+                },
+                {
+                    "name": "undefined",
+                    "size": 12,
+                    "range": [16, 28],
+                    "type": "linear",
+                    "inputs": [
+                        {
+                            "name": "inputs",
+                            "idx": null,
+                            "range": [16, 31],
+                            "except": [[2, 2]],
+                            "exclude": ["idx"]
+                        },
+                        {
+                            "name": "groups",
+                            "idx": 0,
+                            "range": [2, 4],
+                            "except": [[3, 3]],
+                            "exclude": []
+                        }
+                    ]
+                },
+                {
+                    "name": "undefined",
+                    "size": 256,
+                    "range": [28, 284],
+                    "type": "linear",
+                    "inputs": [
+                        {
+                            "name": "inputs",
+                            "idx": null,
+                            "range": [16, 31],
+                            "except": [[2, 2], [3, 81]],
+                            "exclude": [[6, 6], [9, 25]]
+                        }
+                    ]
+                }
+            ]
+        },
+        "outputs": {
+            "size": 4,
+            "groups": [
+                {
+                    "name": "undefined",
+                    "size": 4,
+                    "range": [0, 4],
+                    "type": "poly",
+                    "inputs": [
+                        {
+                            "name": "groups",
+                            "idx": 2,
+                            "range": [],
+                            "except": [],
+                            "exclude": []
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]

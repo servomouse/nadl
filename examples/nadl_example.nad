@@ -1,0 +1,37 @@
+# This is an example of a config which defines two modules: unnamed and "micronet"
+
+inputs: [
+    main_inputs 0:12,
+    single_input 12,
+    13:32
+]
+
+groups: [
+    group1 8 x [inputs[16:31]] type poly,
+    group2 8 x [inputs[16:31] except[idx] except[3:81] exclude[6] exclude[9:25]] type poly,
+    12 x [inputs[16:31] except[2] except[3:81] exclude[idx] exclude[9:25]] type linear,
+    256 x [inputs[16:31] except[2] except[3:81] exclude[6] exclude[9:25]] type linear
+]
+
+outputs: [
+    4 x [groups[2]] type poly,
+    4 x [groups[3]] type linear
+]
+
+module: micronet
+
+    inputs: [
+        main_input 0,
+        1:32
+    ]
+
+    groups: [
+        groupname1 8 x [inputs[16:31]] type poly,
+        groupname2 8 x [inputs[16:31] except[idx] except[3:81] exclude[6] exclude[9:25]] type poly,
+        12 x [inputs[16:31] except[2] exclude[idx], groups[0][2:4] except[3]] type linear,
+        256 x [inputs[16:31] except[2] except[3:81] exclude[6] exclude[9:25]] type linear
+    ]
+
+    outputs: [
+        4 x [groups[2]] type poly
+    ]
