@@ -12,7 +12,7 @@
         ["(", ")"]
     ],
     "indentationRules": {
-        "increaseIndentPattern": "^\\s*(inputs|groups|outputs):\\s*$",
+        "increaseIndentPattern": "^\\s*(module|inputs|groups|outputs):\\s*$",
         "decreaseIndentPattern": "^\\s*\\]"
     }
 }

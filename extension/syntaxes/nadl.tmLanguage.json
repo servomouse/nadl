@@ -27,7 +27,7 @@
       "keyword": {
         "patterns": [
           {
-            "match": "\\b(inputs|groups|outputs|type|exclude)\\b",
+            "match": "\\b(inputs|groups|outputs|type|exclude|except|idx)\\b",
             "name": "keyword.control.nadl"
           }
         ]
