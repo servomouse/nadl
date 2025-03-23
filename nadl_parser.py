@@ -1,6 +1,8 @@
-from new_tokenizer import tokenize, update_ranges
 import json
 import sys
+from nadl_tokenizer import tokenize, update_ranges
+from nadl_postprocessing import module_get_inputs, module_get_groups
+from nadl_stringify import stringify_modules
 
 
 def prepare_data(data):
@@ -33,17 +35,6 @@ def get_module_name(tokens):
     else:
         mod_name = "default"
     return mod_name, tokens
-
-
-def parse_cluster(tokens):
-    if tokens[0]['val']  == 'inputs':
-        return parse_inputs(tokens[1:])
-    elif tokens[0]['val'] in ['outputs', 'groups']:
-        return parse_group(tokens)
-    elif tokens[0]['val']  == 'module':
-        return None, None, tokens
-    else:
-        raise Exception(f"Syntax error at line {tokens[0]['l_number']}: Invalid group name: \"{tokens[0]['val']}\"")
 
 
 def parse_module_inputs(tokens):
@@ -283,14 +274,22 @@ def parse_file(filename):
     with open(filename) as f:
         data = f.read().split('\n')
     lines = prepare_data(data)
-    # for line in lines:
-    #     print(f"{line['l_number']}: {line['text']} [{line['len']}]")
     tokens = update_ranges(tokenize(lines))
-    return parse_modules(tokens)
+    modules = parse_modules(tokens)
+    # Postprocessing:
+    new_modules = []
+    for m_name in modules:
+        new_modules.append({
+            "name": m_name,
+            'inputs': module_get_inputs(modules[m_name]),
+            'groups': module_get_groups(modules[m_name]['groups']) if 'groups' in modules[m_name] else None,
+            'outputs': module_get_groups(modules[m_name]['outputs'])
+        })
+    return new_modules
 
 
 if __name__ == "__main__":
-    filename = sys.argv[1] if len(sys.argv) > 1 else "nadl_example.nad"
+    filename = sys.argv[1] if len(sys.argv) > 1 else "examples/nadl_example.nad"
     modules = parse_file(filename)
-    with open('parse_result.json', 'w') as f:
-        f.write(json.dumps(modules, indent=4))
+    with open('examples/parsing_result.json', 'w') as f:
+        f.write(stringify_modules(modules, False))
