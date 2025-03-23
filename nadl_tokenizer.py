@@ -53,7 +53,7 @@ def update_ranges(tokens):
             elif (tokens[i+1]['type'] == 'comma') or (tokens[i+1]['type'] == 'close_bracket'):
                 new_tokens.append({
                     'type': 'range',
-                    'val': [tokens[i]['val'], tokens[i]['val']],
+                    'val': [tokens[i]['val'], tokens[i]['val']+1],
                     'l_number': tokens[i]['l_number']
                 })
             else:

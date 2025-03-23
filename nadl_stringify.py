@@ -35,6 +35,9 @@ def stringify_group(group, indent, i_symbol, output, g_name):
         output.append(i_symbol*indent + "\"inputs\": [")
         indent += 1
         for g_input in i_group['inputs']:
+            i_range = g_input['range']
+            if i_range == 'full':
+                i_range = "\"full\""
             output.append(i_symbol*indent + "{")
             indent += 1
             output.append(i_symbol*indent + f"\"name\": " + f"\"{g_input['name']}\",")
@@ -42,7 +45,7 @@ def stringify_group(group, indent, i_symbol, output, g_name):
                 output.append(i_symbol*indent + f"\"idx\": " + "null,")
             else:
                 output.append(i_symbol*indent + f"\"idx\": " + f"{g_input['idx']},")
-            output.append(i_symbol*indent + f"\"range\": " + f"{g_input['range']},")
+            output.append(i_symbol*indent + f"\"range\": " + f"{i_range},")
             output.append(i_symbol*indent + f"\"except\": " + f"{g_input['except']},".replace("'", "\""))
             output.append(i_symbol*indent + f"\"exclude\": " + f"{g_input['exclude']}".replace("'", "\""))
             indent -= 1

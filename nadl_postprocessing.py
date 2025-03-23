@@ -18,7 +18,7 @@ def module_get_inputs(module):
         g_name = g['name']
         g_start = g['range'][0]
         g_end = g['range'][1]
-        g_size = g_end - g_start if g_end > g_start else 1
+        g_size = g_end - g_start
         i_size += g_size
         if range_is_valid(g_start, g_end, g_name, i_groups):
             i_groups.append([g_start, g_end, g_name])
