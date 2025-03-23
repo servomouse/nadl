@@ -25,7 +25,7 @@ The division into groups is optional.
     inputs: [
         main_input 0,           # single index
         secondary_input 1:8,    # range, named group
-        8:31                    # range, unnamed group
+        8:32                    # range, unnamed group
     ]
 
 In this example, the network has three input groups:   
@@ -62,6 +62,8 @@ respectively. The syntax for groups and outputs is identical:
             networks containing different types of neurons
 
 The ``<ranges>`` syntax is as follows:
+
+    inputs[:]: connects each neuron in the group to each input node
 
     inputs[<range>]: connects each neuron in the group to the input nodes   
         in the specified range
