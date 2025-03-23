@@ -3,10 +3,7 @@
 
 ## Introduction
 
-NADL is a language used to describe the architecture of neural networks. It views a network   
-as a set of groups, where each group represents a collection of neurons. This   
-approach allows efficient description of complex network architectures   
-even without clearly defined layers and backward connections.
+NADL is a language used to describe the architecture of neural networks. It views a network as a set of groups, where each group represents a collection of neurons. This approach allows efficient description of complex network architectures even without clearly defined layers and backward connections.
 
 ## Syntax
 
@@ -114,7 +111,7 @@ Here is a full example of a NADL configuration:
 
         inputs: [
             main_input 0,      # single index
-            1:31    # range
+            1:32    # range
         ]
 
         groups: [
