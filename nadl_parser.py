@@ -279,12 +279,23 @@ def parse_file(filename):
     # Postprocessing:
     new_modules = []
     for m_name in modules:
-        new_modules.append({
+        offset = 0
+        m_inputs = module_get_inputs(modules[m_name])
+        offset += m_inputs['size']
+        if 'groups' in modules[m_name]:
+            m_groups = module_get_groups(modules[m_name]['groups'], offset)
+            offset += m_groups['size']
+        else:
+            m_groups = None
+        m_outputs = module_get_groups(modules[m_name]['outputs'], offset)
+        module = {
             "name": m_name,
-            'inputs': module_get_inputs(modules[m_name]),
-            'groups': module_get_groups(modules[m_name]['groups']) if 'groups' in modules[m_name] else None,
-            'outputs': module_get_groups(modules[m_name]['outputs'])
-        })
+            'inputs': m_inputs,
+            'outputs': m_outputs
+        }
+        if m_groups:
+            module['groups'] = m_groups
+        new_modules.append(module)
     return new_modules
 
 

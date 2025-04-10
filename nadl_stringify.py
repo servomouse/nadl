@@ -3,12 +3,16 @@ def stringify_inputs(module, indent, i_symbol, output):
     output.append(i_symbol*indent + f"\"inputs\": " + "{")
     indent += 1
     output.append(i_symbol*indent + f"\"size\": " + f"{module['inputs']['size']},")
-    output.append(i_symbol*indent + f"\"ranges\": " + "[")
+    output.append(i_symbol*indent + f"\"offset\": " + f"{module['inputs']['offset']},")
+    output.append(i_symbol*indent + f"\"range\": " + f"{module['inputs']['range']},")
+    output.append(i_symbol*indent + f"\"groups\": " + "[")
     indent += 1
-    for i_group in module['inputs']['ranges']:
+    for i_group in module['inputs']['groups']:
         output.append(i_symbol*indent + "{")
         indent += 1
         output.append(i_symbol*indent + f"\"name\": " + f"\"{i_group['name']}\",")
+        output.append(i_symbol*indent + f"\"size\": " + f"{i_group['size']},")
+        output.append(i_symbol*indent + f"\"offset\": " + f"{i_group['offset']},")
         output.append(i_symbol*indent + f"\"range\": " + f"{i_group['range']}")
         indent -= 1
         output.append(i_symbol*indent + "},")
@@ -23,6 +27,8 @@ def stringify_group(group, indent, i_symbol, output, g_name):
     output.append(i_symbol*indent + f"\"{g_name}\": " + "{")
     indent += 1
     output.append(i_symbol*indent + f"\"size\": " + f"{group['size']},")
+    output.append(i_symbol*indent + f"\"offset\": " + f"{group['offset']},")
+    output.append(i_symbol*indent + f"\"range\": " + f"{group['range']},")
     output.append(i_symbol*indent + f"\"groups\": " + "[")
     indent += 1
     for i_group in group['groups']:
@@ -30,6 +36,7 @@ def stringify_group(group, indent, i_symbol, output, g_name):
         indent += 1
         output.append(i_symbol*indent + f"\"name\": " + f"\"{i_group['name']}\",")
         output.append(i_symbol*indent + f"\"size\": " + f"{i_group['size']},")
+        output.append(i_symbol*indent + f"\"offset\": " + f"{i_group['offset']},")
         output.append(i_symbol*indent + f"\"range\": " + f"{i_group['range']},")
         output.append(i_symbol*indent + f"\"type\": " + f"\"{i_group['type']}\",")
         output.append(i_symbol*indent + "\"inputs\": [")
