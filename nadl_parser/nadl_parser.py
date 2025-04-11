@@ -181,7 +181,7 @@ def parse_subgroup_inputs_and_type(tokens):
         if tokens[0]['type'] == 'open_bracket':
             s_range, tokens = parse_complex_range(tokens)
         else:
-            s_range = []
+            s_range = 'full'
         s_except, s_exclude, tokens = parse_subgroup_excludes(tokens)
         inputs.append({
             'name': s_name,
