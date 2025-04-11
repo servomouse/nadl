@@ -1,8 +1,8 @@
 import json
 import sys
-from nadl_tokenizer import tokenize, update_ranges
-from nadl_postprocessing import module_get_inputs, module_get_groups
-from nadl_stringify import stringify_modules
+from .nadl_tokenizer import tokenize, update_ranges
+from .nadl_postprocessing import module_get_inputs, module_get_groups
+from .nadl_stringify import stringify_modules
 
 
 def prepare_data(data):
