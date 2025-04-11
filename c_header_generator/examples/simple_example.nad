@@ -1,17 +1,22 @@
 module: example_net
 
     inputs: [
-        input0 0:32,
-        input1 32:64
+        input0 0:4,
+        input1 4:8,
+        input2 8:12,
+        input3 12:16,
+        input4 16:20,
+        input5 20:24,
     ]
 
     groups: [
-        layer0 8 x [inputs[0:32]] type linear,
-        layer1 8 x [inputs[1][:]] type linear,
+        layer0 8 x [inputs[0:24] except[10:14] exclude[7]] type linear,
+        layer1 8 x [input1[:] exclude[idx]] type linear,
+        layer2 8 x [inputs[2][:]] type linear,
         layer3 16 x [groups[0:8], groups[1]] type linear,
         layer4 8 x [groups[2]] type linear,
     ]
 
     outputs: [
-        4 x [groups[3]] type poly
+        4 x [groups[4]] type poly
     ]

@@ -3,55 +3,95 @@
 	{
 		"name": "example_net",
 		"inputs": {
-			"size": 64,
+			"size": 24,
 			"offset": 0,
-			"range": [0, 64],
+			"range": [0, 24],
 			"groups": [
 				{
 					"name": "input0",
-					"size": 32,
+					"size": 4,
 					"offset": 0,
-					"range": [0, 32]
+					"range": [0, 4]
 				},
 				{
 					"name": "input1",
-					"size": 32,
-					"offset": 32,
-					"range": [32, 64]
+					"size": 4,
+					"offset": 4,
+					"range": [4, 8]
+				},
+				{
+					"name": "input2",
+					"size": 4,
+					"offset": 8,
+					"range": [8, 12]
+				},
+				{
+					"name": "input3",
+					"size": 4,
+					"offset": 12,
+					"range": [12, 16]
+				},
+				{
+					"name": "input4",
+					"size": 4,
+					"offset": 16,
+					"range": [16, 20]
+				},
+				{
+					"name": "input5",
+					"size": 4,
+					"offset": 20,
+					"range": [20, 24]
 				}
 			]
 		},
 		"groups": {
-			"size": 40,
-			"offset": 64,
-			"range": [64, 104],
+			"size": 48,
+			"offset": 24,
+			"range": [24, 72],
 			"groups": [
 				{
 					"name": "layer0",
 					"size": 8,
-					"offset": 64,
+					"offset": 24,
 					"range": [0, 8],
 					"type": "linear",
 					"inputs": [
 						{
 							"name": "inputs",
 							"idx": null,
-							"range": [0, 32],
-							"except": [],
-							"exclude": []
+							"range": [0, 24],
+							"except": [[10, 14]],
+							"exclude": [[7, 8]]
 						}
 					]
 				},
 				{
 					"name": "layer1",
 					"size": 8,
-					"offset": 72,
+					"offset": 32,
 					"range": [8, 16],
 					"type": "linear",
 					"inputs": [
 						{
+							"name": "input1",
+							"idx": null,
+							"range": "full",
+							"except": [],
+							"exclude": ["idx"]
+						}
+					]
+				},
+				{
+					"name": "layer2",
+					"size": 8,
+					"offset": 40,
+					"range": [16, 24],
+					"type": "linear",
+					"inputs": [
+						{
 							"name": "inputs",
-							"idx": 1,
+							"idx": 2,
 							"range": "full",
 							"except": [],
 							"exclude": []
@@ -61,8 +101,8 @@
 				{
 					"name": "layer3",
 					"size": 16,
-					"offset": 80,
-					"range": [16, 32],
+					"offset": 48,
+					"range": [24, 40],
 					"type": "linear",
 					"inputs": [
 						{
@@ -75,7 +115,7 @@
 						{
 							"name": "groups",
 							"idx": 1,
-							"range": [],
+							"range": "full",
 							"except": [],
 							"exclude": []
 						}
@@ -84,14 +124,14 @@
 				{
 					"name": "layer4",
 					"size": 8,
-					"offset": 96,
-					"range": [32, 40],
+					"offset": 64,
+					"range": [40, 48],
 					"type": "linear",
 					"inputs": [
 						{
 							"name": "groups",
 							"idx": 2,
-							"range": [],
+							"range": "full",
 							"except": [],
 							"exclude": []
 						}
@@ -101,20 +141,20 @@
 		},
 		"outputs": {
 			"size": 4,
-			"offset": 104,
-			"range": [104, 108],
+			"offset": 72,
+			"range": [72, 76],
 			"groups": [
 				{
 					"name": "undefined",
 					"size": 4,
-					"offset": 104,
+					"offset": 72,
 					"range": [0, 4],
 					"type": "poly",
 					"inputs": [
 						{
 							"name": "groups",
-							"idx": 3,
-							"range": [],
+							"idx": 4,
+							"range": "full",
 							"except": [],
 							"exclude": []
 						}
