@@ -1,0 +1,126 @@
+[
+
+	{
+		"name": "example_net",
+		"inputs": {
+			"size": 64,
+			"offset": 0,
+			"range": [0, 64],
+			"groups": [
+				{
+					"name": "input0",
+					"size": 32,
+					"offset": 0,
+					"range": [0, 32]
+				},
+				{
+					"name": "input1",
+					"size": 32,
+					"offset": 32,
+					"range": [32, 64]
+				}
+			]
+		},
+		"groups": {
+			"size": 40,
+			"offset": 64,
+			"range": [64, 104],
+			"groups": [
+				{
+					"name": "layer0",
+					"size": 8,
+					"offset": 64,
+					"range": [0, 8],
+					"type": "linear",
+					"inputs": [
+						{
+							"name": "inputs",
+							"idx": null,
+							"range": [0, 32],
+							"except": [],
+							"exclude": []
+						}
+					]
+				},
+				{
+					"name": "layer1",
+					"size": 8,
+					"offset": 72,
+					"range": [8, 16],
+					"type": "linear",
+					"inputs": [
+						{
+							"name": "inputs",
+							"idx": 1,
+							"range": "full",
+							"except": [],
+							"exclude": []
+						}
+					]
+				},
+				{
+					"name": "layer3",
+					"size": 16,
+					"offset": 80,
+					"range": [16, 32],
+					"type": "linear",
+					"inputs": [
+						{
+							"name": "groups",
+							"idx": null,
+							"range": [0, 8],
+							"except": [],
+							"exclude": []
+						},
+						{
+							"name": "groups",
+							"idx": 1,
+							"range": [],
+							"except": [],
+							"exclude": []
+						}
+					]
+				},
+				{
+					"name": "layer4",
+					"size": 8,
+					"offset": 96,
+					"range": [32, 40],
+					"type": "linear",
+					"inputs": [
+						{
+							"name": "groups",
+							"idx": 2,
+							"range": [],
+							"except": [],
+							"exclude": []
+						}
+					]
+				}
+			]
+		},
+		"outputs": {
+			"size": 4,
+			"offset": 104,
+			"range": [104, 108],
+			"groups": [
+				{
+					"name": "undefined",
+					"size": 4,
+					"offset": 104,
+					"range": [0, 4],
+					"type": "poly",
+					"inputs": [
+						{
+							"name": "groups",
+							"idx": 3,
+							"range": [],
+							"except": [],
+							"exclude": []
+						}
+					]
+				}
+			]
+		}
+	}
+]
