@@ -31,9 +31,14 @@ def get_inputs(module, input_group, idx):
     inputs = get_input_source(module, input_group['name'])
     if input_group['idx'] is not None:
         inputs = inputs['groups'][input_group['idx']]
-    if input_group['range'] == 'full':
-        for i in range(inputs['size']):
-            input_indices.append(inputs['offset']+i)
+    if isinstance(input_group['range'], str):
+        if input_group['range'] == 'full':
+            for i in range(inputs['size']):
+                input_indices.append(inputs['offset']+i)
+        elif input_group['range'] == 'idx':
+            input_indices.append(inputs['offset']+idx)
+        else:
+            raise Exception(f"Error: unknown range type {input_group['range']} of input group name {input_group['name']}")
     else:
         for i in range(input_group['range'][0], input_group['range'][1]):
             input_indices.append(inputs['offset']+i)
