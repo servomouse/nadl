@@ -62,7 +62,7 @@ uint32_t example_net_neurons[] = {
 	   75,	8,			1,		64, 65, 66, 67, 68, 69, 70, 71,
 };
 
-micronet_map_t micronet_map = {
+micronet_map_t example_net_micronet_map = {
 	.num_inputs = 24,
 	.num_neurons = 52,
 	.net_size = 76,

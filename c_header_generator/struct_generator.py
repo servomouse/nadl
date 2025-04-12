@@ -36,7 +36,7 @@ def get_output_indices(module):
 
 def generate_structure(module):
     return [
-        "micronet_map_t micronet_map = {",
+        f"micronet_map_t {module['name']}_micronet_map = " + "{",
         f"\t.num_inputs = {get_num_inputs(module)},",
         f"\t.num_neurons = {get_num_neurons(module)},",
         f"\t.net_size = {get_net_size(module)},",
