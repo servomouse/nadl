@@ -1,0 +1,14 @@
+module: feedback_net
+
+inputs: [
+    main 0:8
+]
+
+groups: [
+    8 x [inputs[:], groups[idx+1]] type poly,
+    1 x [inputs[:]] type poly
+]
+
+outputs: [
+    1 x [groups[:]] type poly
+]
