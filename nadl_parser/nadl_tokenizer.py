@@ -120,6 +120,8 @@ def parse_token(lines):
                     'val': int(tok),
                     'l_number': lines[0]['l_number']
                 }, lines if len(line) > 0 else lines[1:]
+            else:
+                raise Exception(f"Error: unknown symbol: \"{line[0]}\" at line {lines[0]['l_number']}")
     return None, lines[1:]
 
 
