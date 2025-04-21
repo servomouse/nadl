@@ -52,7 +52,7 @@ def stringify_group(group, indent, i_symbol, output, g_name):
                 output.append(i_symbol*indent + f"\"idx\": " + "null,")
             else:
                 output.append(i_symbol*indent + f"\"idx\": " + f"{g_input['idx']},")
-            if isinstance(i_range, str) and i_range == 'idx':
+            if isinstance(i_range, str) and i_range.startswith('idx'):
                 output.append(i_symbol*indent + f"\"range\": " + f"\"{i_range}\",")
             else:
                 output.append(i_symbol*indent + f"\"range\": " + f"{i_range},")

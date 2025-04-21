@@ -10,6 +10,15 @@ uint32_t neurons[] = {
 };
 """
 
+def get_idx(int_idx, str_idx):
+    if '-' in str_idx:
+        offset = -1 * int(str_idx.split('-')[1])
+    elif '+' in str_idx:
+        offset = int(str_idx.split('+')[1])
+    else:
+        offset = 0
+    return int_idx + offset
+
 def get_input_source(module, input_group_name):
     if input_group_name in ['inputs', 'groups', 'outputs']:
         return module[input_group_name]
@@ -35,8 +44,8 @@ def get_inputs(module, input_group, idx):
         if input_group['range'] == 'full':
             for i in range(inputs['size']):
                 input_indices.append(inputs['offset']+i)
-        elif input_group['range'] == 'idx':
-            input_indices.append(inputs['offset']+idx)
+        elif input_group['range'].startswith('idx'):
+            input_indices.append(inputs['offset']+get_idx(idx, input_group['range']))
         else:
             raise Exception(f"Error: unknown range type {input_group['range']} of input group name {input_group['name']}")
     else:
@@ -48,16 +57,16 @@ def get_inputs(module, input_group, idx):
         if isinstance(r, list):
             for i in range(r[0], r[1]):
                 except_list.append(i)
-        elif isinstance(r, str) and r == 'idx':
-            except_list.append(idx)
+        elif isinstance(r, str) and r.startswith('idx'):
+            except_list.append(get_idx(idx, r))
     # Exclude list:
     exclude_list = []
     for r in input_group['exclude']:
         if isinstance(r, list):
             for i in range(r[0], r[1]):
                 exclude_list.append(i)
-        elif isinstance(r, str) and r == 'idx':
-            exclude_list.append(idx)
+        elif isinstance(r, str) and r.startswith('idx'):
+            exclude_list.append(get_idx(idx, r))
     temp_arr = []
     for i in input_indices:
         if i not in except_list:

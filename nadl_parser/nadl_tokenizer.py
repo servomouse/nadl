@@ -101,6 +101,15 @@ def parse_token(lines):
                         line = line[1:]
                     else:
                         break
+                if tok == 'idx' and line[0] in ['+', '-']:
+                    tok += line[0]
+                    line = line[1:]
+                    while len(line) > 0:
+                        if line[0] in digits:
+                            tok += line[0]
+                            line = line[1:]
+                        else:
+                            break
                 lines[0]['text'] = line
                 return {
                     'type': 'label',

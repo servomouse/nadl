@@ -128,7 +128,7 @@ def parse_complex_range(tokens):
     
     if tokens[1]['type'] == 'range':
         c_range = tokens[1]['val']
-    elif tokens[1]['type'] == 'label' and tokens[1]['val'] == 'idx':
+    elif tokens[1]['type'] == 'label' and tokens[1]['val'].startswith('idx'):
         c_range = tokens[1]['val']
     elif tokens[1]['type'] == 'colon':
         c_range = 'full'
